@@ -44,7 +44,7 @@ $body = @{
 
             "category" = "Virtual Machines"
 
-            "name" = "vRops-Monitoring"
+            "name" = "Your vSphere tag goes here"
 
         }
 
