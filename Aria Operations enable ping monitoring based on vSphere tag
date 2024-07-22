@@ -1,0 +1,69 @@
+$Splat = @{
+
+    "URI"         = "https://vrops-server.com/suite-api/api/auth/token/acquire"
+
+    "Headers"     = @{
+
+        'Content-Type'  = "application/json"
+
+        'Accept'  = "application/json"
+
+        }
+
+    "Method"      = "POST"
+
+    "body"        = @{
+
+                        username = "APIUser"
+
+                        authSource = "LOCAL"
+
+                        password = "Your Password"
+
+                    } | ConvertTo-JSON -Depth 6
+
+}
+
+$token = Invoke-RestMethod @Splat | Select-Object -expandproperty token
+
+$headers = @{
+
+    "accept" = "application/json"
+
+    "Authorization" = "OpsToken $token"
+
+    "Content-Type" = "application/json"
+
+}
+
+$body = @{
+
+    "resourceTag" = @(
+
+        @{
+
+            "category" = "Virtual Machines"
+
+            "name" = "vRops-Monitoring"
+
+        }
+
+    )
+
+} | ConvertTo-Json
+
+$response = Invoke-RestMethod -Uri "https://vrops-server.com/suite-api/api/resources/query?page=0&pageSize=1000&_no_links=true" -Method Post -Headers $headers -Body $body
+
+foreach ($item in $response.resourcelist.resourcekey) {
+
+$item.resourceidentifiers[0].value = "true"
+
+}
+
+foreach ($record in $response.resourcelist) {
+
+$filter_record = $record | select-object -Property * -ExcludeProperty resourceStatusStates, resourceHealth, resourceHealthValue, dtEnabled, badges, relatedResources | convertto-json -depth 4 -Compress
+
+Invoke-RestMethod -Uri "https://vrops-server.com/suite-api/api/resources?_no_links=true" -Method Put -Headers $headers -Body $filter_record
+
+}
